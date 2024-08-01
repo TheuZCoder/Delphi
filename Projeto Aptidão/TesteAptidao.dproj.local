@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2024/07/27 18:25:48.000.838,=C:\Users\matro\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2024/07/27 18:47:12.000.608,C:\Users\matro\Documents\Embarcadero\Studio\Projects\Unit1.pas=C:\Users\matro\Desktop\Projeto Zucchetti\Unit1.pas</Transaction>
+    <Transaction>2024/07/27 18:47:12.000.608,C:\Users\matro\Documents\Embarcadero\Studio\Projects\Unit1.dfm=C:\Users\matro\Desktop\Projeto Zucchetti\Unit1.dfm</Transaction>
+    <Transaction>2024/07/27 18:47:49.000.512,C:\Users\matro\Documents\Embarcadero\Studio\Projects\Project1.dproj=C:\Users\matro\Desktop\Projeto Zucchetti\TesteAptidao.dproj</Transaction>
+    <Transaction>2024/07/27 18:48:08.000.226,C:\Users\matro\Desktop\Projeto Zucchetti\Unit1.dfm=C:\Users\matro\Desktop\Projeto Zucchetti\UPesqPedidos.dfm</Transaction>
+    <Transaction>2024/07/27 18:48:08.000.226,C:\Users\matro\Desktop\Projeto Zucchetti\Unit1.pas=C:\Users\matro\Desktop\Projeto Zucchetti\UPesqPedidos.pas</Transaction>
+    <Transaction>2024/07/27 18:57:35.000.104,=C:\Users\matro\Desktop\Projeto Zucchetti\UCadPedidos.pas</Transaction>
+    <Transaction>2024/07/27 19:20:57.000.359,=C:\Users\matro\Desktop\Projeto Zucchetti\UCadItens.pas</Transaction>
+  </Transactions>
+</BorlandProject>
