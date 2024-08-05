@@ -1,0 +1,383 @@
+unit UCadPedidos;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.StdCtrls, Vcl.ExtCtrls,
+  Data.DB, Vcl.Grids, Vcl.DBGrids, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
+  FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Phys.Oracle,
+  FireDAC.Phys.OracleDef, FireDAC.VCLUI.Wait, FireDAC.Stan.Param, FireDAC.DatS,
+  FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet, FireDAC.Comp.Client, UCadItens;
+
+type
+  TFrmUCadPedidos = class(TForm)
+    PanelTop: TPanel;
+    Label1: TLabel;
+    ECadPedido: TEdit;
+    Label2: TLabel;
+    DTDataPedido: TDateTimePicker;
+    PanelSub: TPanel;
+    Label3: TLabel;
+    DBGrid1: TDBGrid;
+    PanelLow: TPanel;
+    BSalvar: TButton;
+    BCancelar: TButton;
+    BIncluir: TButton;
+    BAlterar: TButton;
+    BExcluir: TButton;
+    QueryCadPedido: TFDQuery;
+    SourceDb: TDataSource;
+    QueryCadPedidoAux: TFDQuery;
+    QueryInsertCad: TFDQuery;
+    procedure BIncluirClick(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
+    procedure BSalvarClick(Sender: TObject);
+    procedure BCancelarClick(Sender: TObject);
+    procedure BExcluirClick(Sender: TObject);
+    procedure BAlterarClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+  private
+    FModo: string;
+    FNumeroPedido: string;
+    FDataPedido: TDateTime;
+  public
+    property Modo: string read FModo write FModo;
+    property NumeroPedido: string read FNumeroPedido write FNumeroPedido;
+    property DataPedido: TDateTime read FDataPedido write FDataPedido;
+  end;
+
+var
+  FrmUCadPedidos: TFrmUCadPedidos;
+
+implementation
+uses
+UPesqPedidos;
+
+{$R *.dfm}
+
+procedure TFrmUCadPedidos.BAlterarClick(Sender: TObject);
+var
+  frmCadItens: TFrmUCadItens;
+  sCodigoProduto: string;
+  sQuantidadeProduto: string;
+begin
+ frmCadItens := TFrmUCadItens.Create(Self);
+ sCodigoProduto := DBGrid1.DataSource.DataSet.FieldByName('PK_Produtos').AsString;
+ sQuantidadeProduto := DBGrid1.DataSource.DataSet.FieldByName('ItnQtd').AsString;
+ try
+  with QueryCadPedidoAux do
+  begin
+    SQL.Text := 'SELECT PdtDescProd '+
+                '  FROM C_Produtos '+
+                ' WHERE PK_Produtos = :PK_Produtos';
+    ParamByName('PK_Produtos').AsString := sCodigoProduto;
+    Open;
+  end;
+  with frmCadItens do
+  begin
+    CBCodProd.Text := sCodigoProduto;
+    EDescProduto.Text := QueryCadPedidoAux.FieldByName('PdtDescProd').AsString;
+    EQuantidade.Text := sQuantidadeProduto;
+    CBCodProd.Enabled := False;
+    EDescProduto.Enabled := False;
+    Modo := 'Alterar';
+    ShowModal;
+  end;
+
+ finally
+  frmCadItens.Free;
+  OnActivate(Self);
+ end;
+end;
+
+procedure TFrmUCadPedidos.BCancelarClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TFrmUCadPedidos.BExcluirClick(Sender: TObject);
+var
+  sCodigoProduto: string;
+begin
+  sCodigoProduto := QueryCadPedido.FieldByName('PK_Produtos').AsString;
+  if sCodigoProduto = '' then
+  begin
+    ShowMessage('Por favor, selecione um produto para excluir.');
+    Exit;
+  end;
+
+  // Confirmar exclusão com o usuário
+  if MessageDlg('Tem certeza que deseja excluir este produto?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+  begin
+    try
+    with QueryCadPedidoAux do
+    begin
+      // Excluir produtos associados a tabela T_SAVPROD
+      SQL.Text := 'DELETE FROM T_SAVPROD '+
+                  '      WHERE PK_Produtos = :PK_Produtos';
+      ParamByName('PK_Produtos').AsString := sCodigoProduto;
+      ExecSQL;
+    end;
+
+      with QueryCadPedido do
+        begin
+          Refresh;
+        end;
+
+      // Informar o usuário e atualizar a visualização
+      ShowMessage('Produto excluído!');
+    except
+      on E: Exception do
+      begin
+        // Desfazer transação em caso de erro
+        ShowMessage('Erro ao excluir o produto: ' + E.Message);
+      end;
+    end;
+  end;
+end;
+
+procedure TFrmUCadPedidos.BIncluirClick(Sender: TObject);
+var
+  frmCadItens: TFrmUCadItens;
+begin
+ frmCadItens := TFrmUCadItens.Create(Self);
+ try
+  frmCadItens.Modo := 'Incluir';
+  frmCadItens.ShowModal;
+ finally
+  frmCadItens.Free;
+  OnActivate(Self);
+ end;
+end;
+
+procedure TFrmUCadPedidos.BSalvarClick(Sender: TObject);
+var
+  dValorTotal: Double;
+  iNumeroPedido: Integer;
+  dDataPedido: TDateTime;
+  iPkItens: Integer;
+begin
+  iNumeroPedido := StrToInt(ECadPedido.Text);
+  dDataPedido := DTDataPedido.Date;
+
+  if Modo = 'Incluir' then
+  begin
+    try
+      with QueryInsertCad do
+        begin
+            // Inserir o novo pedido na tabela C_Pedidos
+          SQL.Text := 'INSERT INTO C_Pedidos (PK_Pedidos, PddDatePed, PddTotalPed) ' +
+                      '     VALUES (:PK_Pedidos, :PddDatePed, :PddTotalPed)';
+          ParamByName('PK_Pedidos').AsInteger := iNumeroPedido;
+          ParamByName('PddDatePed').AsDate := dDataPedido;
+          ParamByName('PddTotalPed').AsFloat := 0; // Valor total inicial, atualizado mais tarde
+          ExecSQL;
+        end;
+
+      dValorTotal := 0;
+      QueryCadPedido.First;
+
+      while not QueryCadPedido.Eof do
+      begin
+       with QueryInsertCad do
+       begin
+        // Obter o próximo valor da sequência para a tabela C_Itens
+        SQL.Text := 'SELECT C_Itens_SEQ.NEXTVAL AS new_id FROM dual';
+        Open;
+        iPkItens := QueryInsertCad.FieldByName('new_id').AsInteger;
+        Close;
+
+        // Inserir os itens na tabela C_Itens
+        SQL.Text := 'INSERT INTO C_Itens ' +
+                    '(PK_Itens, FK_Itens_Pedidos, FK_Itens_Produtos, ItnQtd, ItnValItens) ' +
+                    '     VALUES (:PK_Itens, :FK_Itens_Pedidos, :FK_Itens_Produtos, :ItnQtd, :ItnValItens)';
+        ParamByName('PK_Itens').AsInteger := iPkItens;
+        ParamByName('FK_Itens_Pedidos').AsInteger := iNumeroPedido;
+        ParamByName('FK_Itens_Produtos').AsString := QueryCadPedido.FieldByName('PK_Produtos').AsString;
+        ParamByName('ItnQtd').AsInteger := QueryCadPedido.FieldByName('ItnQtd').AsInteger;
+        ParamByName('ItnValItens').AsFloat := QueryCadPedido.FieldByName('PdtValProd').AsFloat * QueryCadPedido.FieldByName('ItnQtd').AsInteger;
+        ExecSQL;
+
+        // Atualizar o valor total do pedido
+        dValorTotal := dValorTotal + QueryInsertCad.ParamByName('ItnValItens').AsFloat;
+
+        QueryCadPedido.Next;
+
+       end;
+
+      end;
+
+      with QueryCadPedidoAux do
+      begin
+         // Atualizar o valor total do pedido na tabela C_Pedidos
+      SQL.Text := 'UPDATE C_Pedidos ' +
+                  '   SET PddTotalPed = :PddTotalPed ' +
+                  ' WHERE PK_Pedidos = :PK_Pedidos';
+      ParamByName('PddTotalPed').AsFloat := dValorTotal;
+      ParamByName('PK_Pedidos').AsInteger := iNumeroPedido;
+      ExecSQL;
+
+      // Deletar todos os itens da tabela temporária T_SavProd
+      SQL.Text := 'DELETE FROM T_SavProd';
+      ExecSQL;
+      end;
+
+      with FrmUPesqPedidos do
+      begin
+        QueryDb.Refresh;
+        QueryTabelaAux.Refresh;
+      end;
+
+      ShowMessage('Pedido salvo com sucesso!');
+      Close;
+
+    except
+      on E: Exception do
+      begin
+        // Desfazer transação em caso de erro
+        FrmUPesqPedidos.ConnectDb.Rollback;
+        ShowMessage('Erro ao salvar o pedido: ' + E.Message);
+      end;
+    end;
+  end
+  else if Modo = 'Alterar' then
+  begin
+    try
+      dValorTotal := 0;
+      QueryCadPedido.First;
+
+      // Atualizar itens existentes e adicionar novos
+      while not QueryCadPedido.Eof do
+      begin
+        with QueryCadPedidoAux do
+         begin
+          SQL.Text := 'SELECT COUNT(*)'+
+                      '    AS item_count '+
+                      '  FROM C_Itens ' +
+                      ' WHERE FK_Itens_Pedidos = :FK_Itens_Pedidos '+
+                      '   AND FK_Itens_Produtos = :FK_Itens_Produtos';
+          ParamByName('FK_Itens_Pedidos').AsInteger := iNumeroPedido;
+          ParamByName('FK_Itens_Produtos').AsString := QueryCadPedido.FieldByName('PK_Produtos').AsString;
+          Open;
+         end;
+
+
+        if QueryCadPedidoAux.FieldByName('item_count').AsInteger = 0 then
+        begin
+          with QueryInsertCad do
+           begin
+            SQL.Text := 'SELECT C_Itens_SEQ.NEXTVAL AS new_id FROM dual';
+            Open;
+            iPkItens := QueryInsertCad.FieldByName('new_id').AsInteger;
+            Close;
+            // Inserir novo item
+            SQL.Text := 'INSERT INTO C_Itens ' +
+                        '(PK_Itens, FK_Itens_Pedidos, FK_Itens_Produtos, ItnQtd, ItnValItens) ' +
+                        '     VALUES (:PK_Itens, :FK_Itens_Pedidos, :FK_Itens_Produtos, :ItnQtd, :ItnValItens)';
+            ParamByName('PK_Itens').AsInteger := iPkItens;
+            ParamByName('FK_Itens_Pedidos').AsInteger := iNumeroPedido;
+            ParamByName('FK_Itens_Produtos').AsString := QueryCadPedido.FieldByName('PK_Produtos').AsString;
+            ParamByName('ItnQtd').AsInteger := QueryCadPedido.FieldByName('ItnQtd').AsInteger;
+            ParamByName('ItnValItens').AsFloat := QueryCadPedido.FieldByName('PdtValProd').AsFloat * QueryCadPedido.FieldByName('ItnQtd').AsInteger;
+            ExecSQL;
+           end;
+
+        end
+        else
+        begin
+          with QueryCadPedidoAux do
+           begin
+           // Atualizar item existente
+            SQL.Text := 'UPDATE C_Itens ' +
+                        '   SET ItnQtd = :ItnQtd, ItnValItens = :ItnValItens ' +
+                        ' WHERE FK_Itens_Pedidos = :FK_Itens_Pedidos '+
+                        '   AND FK_Itens_Produtos = :FK_Itens_Produtos';
+            ParamByName('ItnQtd').AsInteger := QueryCadPedido.FieldByName('ItnQtd').AsInteger;
+            ParamByName('ItnValItens').AsFloat := QueryCadPedido.FieldByName('PdtValProd').AsFloat * QueryCadPedido.FieldByName('ItnQtd').AsInteger;
+            ParamByName('FK_Itens_Pedidos').AsInteger := iNumeroPedido;
+            ParamByName('FK_Itens_Produtos').AsString := QueryCadPedido.FieldByName('PK_Produtos').AsString;
+            ExecSQL;
+           end;
+
+        end;
+
+        dValorTotal := dValorTotal + QueryCadPedido.FieldByName('ItnValItens').AsFloat;
+        QueryCadPedido.Next;
+      end;
+
+      with QueryCadPedidoAux do
+       begin
+
+        // Remover itens que não estão mais na tabela temporária
+        SQL.Text := 'DELETE FROM C_Itens ' +
+                    '      WHERE FK_Itens_Pedidos = :FK_Itens_Pedidos '+
+                    '        AND FK_Itens_Produtos '+
+                    '     NOT IN '+
+                    '    (SELECT PK_Produtos '+
+                    '       FROM T_SavProd '+
+                    '      WHERE FK_Itens_Pedidos = :FK_Itens_Pedidos)';
+        ParamByName('FK_Itens_Pedidos').AsInteger := iNumeroPedido;
+        ExecSQL;
+
+        // Atualizar o valor total do pedido na tabela C_Pedidos
+        SQL.Text := 'UPDATE C_Pedidos ' +
+                    '   SET PddDatePed = :PddDatePed, '+
+                    '       PddTotalPed = :PddTotalPed ' +
+                    ' WHERE PK_Pedidos = :PK_Pedidos';
+        ParamByName('PddDatePed').AsDate := dDataPedido;
+        ParamByName('PddTotalPed').AsFloat := dValorTotal;
+        ParamByName('PK_Pedidos').AsInteger := iNumeroPedido;
+        ExecSQL;
+
+        // Deletar todos os itens da tabela temporária T_SavProd
+        SQL.Text := 'DELETE FROM T_SavProd';
+        ExecSQL;
+       end;
+
+      // Confirmar transação
+      with FrmUPesqPedidos do
+      begin
+        ConnectDb.Commit;
+        QueryDb.Refresh;
+        QueryTabelaAux.Refresh;
+      end;
+
+      ShowMessage('Pedido alterado com sucesso!');
+      Close;
+    except
+      on E: Exception do
+      begin
+        // Desfazer transação em caso de erro
+        FrmUPesqPedidos.ConnectDb.Rollback;
+        ShowMessage('Erro ao alterar o pedido: ' + E.Message);
+      end;
+    end;
+  end;
+end;
+
+
+procedure TFrmUCadPedidos.FormActivate(Sender: TObject);
+begin
+    if QueryCadPedido.Active then
+      QueryCadPedido.Refresh
+    else
+      with  QueryCadPedido do
+      begin
+        SQL.Text := 'SELECT * FROM (              '+
+                    '       SELECT *              '+
+                    '         FROM T_SAVPROD      '+
+                    '     ORDER BY PK_Produtos)';
+        Open;
+      end;
+
+end;
+procedure TFrmUCadPedidos.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  FrmUPesqPedidos.QueryDb.Refresh;
+  QueryCadPedidoAux.SQL.Text := 'DELETE FROM T_SavProd';
+  QueryCadPedidoAux.ExecSQL;
+end;
+
+end.

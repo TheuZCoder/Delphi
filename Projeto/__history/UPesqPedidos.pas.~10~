@@ -1,0 +1,292 @@
+unit UPesqPedidos;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.UITypes, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls, Data.DB,
+  Vcl.Grids, Vcl.DBGrids, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
+  FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Phys.Oracle,
+  FireDAC.Phys.OracleDef, FireDAC.VCLUI.Wait, FireDAC.Stan.Param, FireDAC.DatS,
+  FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet, FireDAC.Comp.Client, UCadPedidos,
+  ppProd, ppClass, ppReport, ppComm, ppRelatv, ppDB, ppDBPipe, ppBands, ppCache,
+  ppDesignLayer, ppParameter, ppVar, ppCtrls, ppPrnabl;
+
+type
+  TFrmUPesqPedidos = class(TForm)
+    PainelTopo: TPanel;
+    Bimprimir: TButton;
+    Label1: TLabel;
+    ELocalizar: TEdit;
+    BLocalizar: TButton;
+    BIncluir: TButton;
+    BAlterar: TButton;
+    BExcluir: TButton;
+    DBGPrincipal: TDBGrid;
+    DBGSecundario: TDBGrid;
+    ConnectDb: TFDConnection;
+    QDb: TFDQuery;
+    SourceDb: TDataSource;
+    QAuxiliar: TFDQuery;
+    QTabelaAux: TFDQuery;
+    DataSourceAux: TDataSource;
+    ppDBPipeline1: TppDBPipeline;
+    ppReport1: TppReport;
+    DSReport: TDataSource;
+    QReport: TFDQuery;
+    ppParameterList1: TppParameterList;
+    ppDesignLayers1: TppDesignLayers;
+    ppDesignLayer1: TppDesignLayer;
+    ppHeaderBand1: TppHeaderBand;
+    ppDetailBand1: TppDetailBand;
+    ppFooterBand1: TppFooterBand;
+    ppLabel1: TppLabel;
+    ppLabel2: TppLabel;
+    ppDBText1: TppDBText;
+    ppLabel3: TppLabel;
+    ppDBText2: TppDBText;
+    ppLabel4: TppLabel;
+    ppDBText3: TppDBText;
+    ppLabel5: TppLabel;
+    ppLabel6: TppLabel;
+    ppDBText4: TppDBText;
+    ppLabel7: TppLabel;
+    ppDBText5: TppDBText;
+    ppLabel8: TppLabel;
+    ppLabel9: TppLabel;
+    ppDBText6: TppDBText;
+    ppLabel10: TppLabel;
+    ppLabel11: TppLabel;
+    ppDBText7: TppDBText;
+    ppLabel12: TppLabel;
+    ppDBText8: TppDBText;
+    ppSystemVariable1: TppSystemVariable;
+    ppLabel13: TppLabel;
+    procedure BIncluirClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure BAlterarClick(Sender: TObject);
+    procedure BExcluirClick(Sender: TObject);
+    procedure BLocalizarClick(Sender: TObject);
+    procedure QDbAfterScroll(DataSet: TDataSet);
+    procedure BimprimirClick(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  FrmUPesqPedidos: TFrmUPesqPedidos;
+
+implementation
+
+{$R *.dfm}
+
+procedure TFrmUPesqPedidos.BAlterarClick(Sender: TObject);
+var
+  frmManutencaoPedidos: TFrmUCadPedidos;
+  iNumeroPedido: Integer;
+  dDataPedido: TDateTime;
+begin
+  // Obter o numero_pedido a partir do grid
+  iNumeroPedido := QDb.FieldByName('PK_Pedidos').AsInteger;
+
+  frmManutencaoPedidos := TFrmUCadPedidos.Create(Self);
+  try
+    frmManutencaoPedidos.Modo := 'Alterar';
+
+    with QAuxiliar do
+    begin
+      // Consultar a data_pedido da tabela C_Pedidos
+      SQL.Text := 'SELECT PddDatePed                 '+
+                  '  FROM C_Pedidos                  '+
+                  ' WHERE PK_Pedidos = :pPK_Pedidos  ';
+      ParamByName('pPK_Pedidos').AsInteger := iNumeroPedido;
+      Open;
+    end;
+
+    if not QAuxiliar.IsEmpty then
+    begin
+      dDataPedido := QDb.FieldByName('PddDatePed').AsDateTime;
+      // Atribuir valores ao formulário
+      frmManutencaoPedidos.DTDataPedido.Date := dDataPedido;
+      frmManutencaoPedidos.ECadPedido.Text := iNumeroPedido.ToString;
+    end
+    else
+    begin
+      ShowMessage('Pedido não encontrado.');
+      Exit;
+    end;
+
+    with QAuxiliar do
+    begin
+      Close;
+
+      // Mover os itens existentes do pedido para a tabela temporária T_SavProd
+      SQL.Text := 'INSERT INTO T_SavProd (PK_Produtos, ItnQtd,        '+
+                  '                       PdtValProd, ItnValItens)    '+
+                  '     SELECT c.FK_Itens_Produtos, c.ItnQtd,         '+
+                  '            p.PdtValProd, c.ItnValItens            '+
+                  '       FROM C_Itens c                              '+
+                  '       JOIN C_Produtos p                           '+
+                  '         ON c.FK_Itens_Produtos = p.PK_Produtos    '+
+                  '      WHERE c.FK_Itens_Pedidos = :pFK_Itens_Pedidos';
+      ParamByName('pFK_Itens_Pedidos').AsInteger := iNumeroPedido;
+      ExecSQL;
+    end;
+
+    with frmManutencaoPedidos do
+    begin
+      ECadPedido.Enabled := False;
+      ShowModal;
+    end;
+
+  finally
+    frmManutencaoPedidos.Free;
+  end;
+end;
+
+procedure TFrmUPesqPedidos.BExcluirClick(Sender: TObject);
+var
+  iNumeroPedido: Integer;
+begin
+  iNumeroPedido := DBGPrincipal.DataSource.DataSet.FieldByName('PK_Pedidos').AsInteger;
+  // Verificar se o pedido está selecionado
+  if iNumeroPedido = Null then
+  begin
+    ShowMessage('Por favor, selecione um pedido para excluir.');
+    Exit;
+  end;
+
+  // Confirmar exclusão com o usuário
+  if MessageDlg('Tem certeza que deseja excluir este pedido?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+  begin
+    try
+
+      with QAuxiliar do
+      begin
+        // Excluir itens associados ao pedido da tabela C_Itens
+        SQL.Text := 'DELETE FROM C_Itens                              '+
+                    '      WHERE FK_Itens_Pedidos = :pFK_Itens_Pedidos';
+        ParamByName('pFK_Itens_Pedidos').AsInteger := iNumeroPedido;
+        ExecSQL;
+
+        // Excluir pedido da tabela C_Pedidos
+        SQL.Text := 'DELETE FROM C_Pedidos                '+
+                    '      WHERE PK_Pedidos = :pPK_Pedidos';
+        ParamByName('pPK_Pedidos').AsInteger := iNumeroPedido;
+        ExecSQL;
+      end;
+
+      ShowMessage('Pedido excluído com sucesso!');
+      QTabelaAux.Refresh;
+      QDb.Refresh;
+    except
+      on E: Exception do
+      begin
+        FrmUPesqPedidos.ConnectDb.Rollback;
+        ShowMessage('Erro ao excluir o pedido: ' + E.Message);
+      end;
+    end;
+  end;
+end;
+
+procedure TFrmUPesqPedidos.BimprimirClick(Sender: TObject);
+var
+  iNumeroPedido: integer;
+begin
+  iNumeroPedido := QDb.FieldByName('PK_Pedidos').AsInteger;
+
+  with QReport do
+  begin
+    SQL.Text :='SELECT * FROM (                                       '+
+               '       SELECT ci.*,                                   '+
+               '               cp.PddDatePed,                         '+
+               '               cp.PddTotalPed "TOTAL PEDIDOS",        '+
+               '               p.PdtValProd,                          '+
+               '               p.PdtDescProd                          '+
+               '         FROM C_ITENS ci                              '+
+               '   INNER JOIN C_PEDIDOS cp                            '+
+               '           ON ci.FK_Itens_Pedidos = cp.PK_Pedidos     '+
+               '   INNER JOIN C_PRODUTOS p                            '+
+               '           ON ci.FK_Itens_Produtos = p.PK_Produtos    '+
+               '        WHERE ci.FK_Itens_Pedidos = :pFK_Itens_Pedidos'+
+               '     ORDER BY ci.FK_Itens_Produtos)                   ';
+    ParamByName('pFK_Itens_Pedidos').AsInteger := iNumeroPedido;
+    Open;
+    end;
+    ppReport1.DataPipeline := ppDBPipeline1;
+    ppReport1.Print;
+end;
+
+procedure TFrmUPesqPedidos.BIncluirClick(Sender: TObject);
+var
+  frmManutencaoPedidos: TFrmUCadPedidos;
+begin
+  frmManutencaoPedidos := TFrmUCadPedidos.Create(Self);
+  try
+    frmManutencaoPedidos.Modo := 'Incluir';
+    frmManutencaoPedidos.ShowModal
+  finally
+    frmManutencaoPedidos.Free;
+  end;
+
+end;
+
+procedure TFrmUPesqPedidos.BLocalizarClick(Sender: TObject);
+var
+  iNumeroPedido: string;
+begin
+  iNumeroPedido := ELocalizar.Text;
+
+  with QDb do
+  begin
+    SQL.Text := 'SELECT * FROM C_PEDIDOS   '+
+                '        WHERE PK_Pedidos  '+
+                '         LIKE :pPK_Pedidos'+
+                '     ORDER BY PK_Pedidos  ';
+    Params.ParamByName('pPK_Pedidos').AsString := '%' + iNumeroPedido + '%';
+    Open;
+  end;
+  if QDb.IsEmpty then
+    ShowMessage('Nenhum pedido encontrado com o número especificado.');
+end;
+
+procedure TFrmUPesqPedidos.FormCreate(Sender: TObject);
+begin
+  with QDb do
+  begin
+    SQL.Text := 'SELECT * FROM (          '+
+                '       SELECT *          '+
+                '         FROM C_PEDIDOS  '+
+                '     ORDER BY PK_Pedidos)';
+    Open;
+    AfterScroll := QDbAfterScroll;
+    Open;
+  end;
+end;
+procedure TFrmUPesqPedidos.QDbAfterScroll(DataSet: TDataSet);
+var
+  iNumeroPedido: string;
+begin
+  // Obter o número do pedido selecionado
+  iNumeroPedido := QDb.FieldByName('PK_Pedidos').AsString;
+
+  // Atualizar a consulta dos itens
+  with QTabelaAux do
+  begin
+    Close;
+    SQL.Text := 'SELECT * FROM (                                    '+
+                '       SELECT *                                    '+
+                '         FROM C_ITENS                              '+
+                '        WHERE FK_Itens_Pedidos = :pFK_Itens_Pedidos'+
+                '     ORDER BY FK_Itens_Produtos)                   ';
+    ParamByName('pFK_Itens_Pedidos').AsString := iNumeroPedido;
+    Open;
+  end;
+end;
+
+end.
+
+
