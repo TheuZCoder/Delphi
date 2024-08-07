@@ -1,0 +1,218 @@
+unit UCadItens;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.Phys.Oracle, FireDAC.Phys.OracleDef, FireDAC.VCLUI.Wait,
+  FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, Data.DB,
+  FireDAC.Comp.DataSet, FireDAC.Comp.Client;
+
+type
+  TFrmUCadItens = class(TForm)
+    Panel1: TPanel;
+    Panel2: TPanel;
+    Label1: TLabel;
+    Label2: TLabel;
+    Label3: TLabel;
+    EDescProduto: TEdit;
+    EQuantidade: TEdit;
+    CBCodProd: TComboBox;
+    BSalvar: TButton;
+    BCancelar: TButton;
+    QProduto: TFDQuery;
+    SourceDb: TDataSource;
+    QProdutoAux: TFDQuery;
+    QInsertProd: TFDQuery;
+    procedure CBCodProdChange(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure BCancelarClick(Sender: TObject);
+    procedure BSalvarClick(Sender: TObject);
+  private
+    FModo: string;
+    sCodProd: string;
+    sCodTab: string;
+    iQtd: Integer;
+    dValUni: Double;
+    dValTotal: Double;
+  public
+    property Modo: string read FModo write FModo;
+  end;
+
+var
+  FrmUCadItens: TFrmUCadItens;
+
+implementation
+
+uses
+  UCadPedidos,UPesqPedidos;
+
+{$R *.dfm}
+
+procedure TFrmUCadItens.BCancelarClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TFrmUCadItens.BSalvarClick(Sender: TObject);
+begin
+  sCodProd := CBCodProd.Text;
+  iQtd := StrToIntDef(EQuantidade.Text, 0);
+  if Modo = 'Incluir' then
+  begin
+    with QProdutoAux do
+    begin
+      SQL.Text := 'SELECT Svp_CodTmp               '+
+                  '  FROM T_SAVPROD                 '+
+                  ' WHERE Svp_CodTmp = :pPK_Produtos';
+      ParamByName('pPK_Produtos').AsString := sCodProd;
+      Open;
+    end;
+
+    try
+    if not QProdutoAux.IsEmpty then
+      begin
+        sCodTab := QProdutoAux.FieldByName('Svp_CodTmp').AsString;
+        if sCodProd = sCodTab then
+        begin
+          ShowMessage('Produto já inserido no Pedido, ' +
+                        'Alterar ou Excluir o já existente!');
+          Close;
+          Exit
+        end;
+      end;
+      finally
+      QProdutoAux.Close;
+    end;
+
+    with QProdutoAux do
+    begin
+      SQL.Text := 'SELECT Pdt_ValPrd                 '+
+                  '  FROM C_Produtos                 '+
+                  ' WHERE Pdt_CodPrd = :pPK_Produtos';
+      ParamByName('pPK_Produtos').AsString := sCodProd;
+      Open;
+    end;
+
+    if not QProdutoAux.IsEmpty then
+    begin
+      dValUni := QProdutoAux.FieldByName('Pdt_ValPrd').AsFloat;
+      dValTotal := iQtd * dValUni;
+
+      try
+        with QProdutoAux do
+        begin
+          SQL.Text := 'INSERT INTO T_SAVPROD(Svp_CodTmp, Svp_Qtd,'+
+                      '            Svp_ValPrd, Svp_ValItn)      '+
+                      '     VALUES (:pPK_Produtos, :pItnQtd,     '+
+                      '            :pPdtValProd, :pItnValItens)  ';
+
+          ParamByName('pPK_Produtos').AsString := sCodProd;
+          ParamByName('pItnQtd').AsInteger := iQtd;
+          ParamByName('pPdtValProd').AsFloat := dValUni;
+          ParamByName('pItnValItens').AsFloat := dValTotal;
+          ExecSQL;
+        end;
+
+        try
+          ShowMessage('Dados salvos com sucesso!');
+          Close;
+        except
+        on E: Exception do
+          ShowMessage('Erro ao salvar o item: ' + E.Message);
+        end;
+      except
+        on E: Exception do
+        begin
+          ShowMessage('Erro ao salvar os dados: ' + E.Message);
+        end;
+      end;
+    end
+    else
+    begin
+      ShowMessage('Produto não encontrado.');
+    end;
+  end
+  else if Modo = 'Alterar' then
+  begin
+    try
+      with QInsertProd do
+      begin
+        SQL.Text := 'SELECT Pdt_ValPrd                 '+
+                    '  FROM C_Produtos                 '+
+                    ' WHERE Pdt_CodPrd = :pPK_Produtos';
+        ParamByName('pPK_Produtos').AsString := sCodProd;
+        Open;
+      end;
+      with QProdutoAux do
+      begin
+        SQL.Text := 'UPDATE T_SAVPROD                  '+
+                    '   SET Svp_Qtd = :pItnQtd,         '+
+                    '       Svp_ValItn = :pItnValItens'+
+                    ' WHERE Svp_CodTmp = :pPK_Produtos';
+
+        dValUni := QInsertProd.FieldByName('Pdt_ValPrd').AsFloat;
+        dValTotal := iQtd * dValUni;
+
+        ParamByName('pItnQtd').AsInteger := iQtd;
+        ParamByName('pItnValItens').AsFloat := dValTotal;
+        ParamByName('pPK_Produtos').AsString := sCodProd;
+        ExecSQL;
+      end;
+      ShowMessage('Quantidade atualizada com sucesso!');
+      Close;
+      except
+      on E: Exception do
+      begin
+        ShowMessage('Erro ao atualizar o item: ' + E.Message);
+      end;
+    end;
+  end;
+end;
+
+procedure TFrmUCadItens.CBCodProdChange(Sender: TObject);
+begin
+  sCodProd := CBCodProd.Text;
+  try
+    with QProdutoAux do
+    begin
+      SQL.Text := 'SELECT * FROM (                           '+
+                  '       SELECT Pdt_Dscprd, Pdt_ValPrd     '+
+                  '         FROM C_Produtos                  '+
+                  '        WHERE Pdt_CodPrd = :pPK_Produtos)';
+      ParamByName('pPK_Produtos').AsString := sCodProd;
+      Open;
+    end;
+
+    if not QProdutoAux.Eof then
+    begin
+      QProduto.First;
+      EDescProduto.Text := QProdutoAux.FieldByName('Pdt_Dscprd').AsString;
+    end
+    else
+    begin
+      EDescProduto.Text := '';
+    end;
+  finally
+  end;
+end;
+
+procedure TFrmUCadItens.FormCreate(Sender: TObject);
+begin
+  with QProduto do
+  begin
+    Open;
+  end;
+  CBCodProd.Items.Clear;
+  QProduto.First;
+  while not QProduto.Eof do
+  begin
+    CBCodProd.Items.Add(QProduto.FieldByName('Pdt_CodPrd').AsString);
+    QProduto.Next;
+  end;
+end;
+
+end.

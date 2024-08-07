@@ -1,0 +1,961 @@
+object FrmUPesqPedidos: TFrmUPesqPedidos
+  Left = 0
+  Top = 0
+  Caption = 'FrmUPesqPedidos'
+  ClientHeight = 398
+  ClientWidth = 991
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  OldCreateOrder = True
+  OnCreate = FormCreate
+  PixelsPerInch = 96
+  TextHeight = 15
+  object PainelTopo: TPanel
+    Left = 0
+    Top = 0
+    Width = 991
+    Height = 65
+    Align = alTop
+    Padding.Left = 5
+    Padding.Top = 5
+    Padding.Right = 5
+    Padding.Bottom = 5
+    TabOrder = 0
+    DesignSize = (
+      991
+      65)
+    object Label1: TLabel
+      Left = 200
+      Top = 25
+      Width = 74
+      Height = 15
+      Caption = 'N'#176' do Pedido:'
+    end
+    object ELocalizar: TEdit
+      Left = 280
+      Top = 22
+      Width = 121
+      Height = 23
+      Anchors = [akLeft, akTop, akRight]
+      TabOrder = 0
+    end
+    object BAlterar: TButton
+      Left = 767
+      Top = 13
+      Width = 105
+      Height = 41
+      Anchors = [akTop, akRight]
+      Cancel = True
+      Caption = 'Alterar'
+      TabOrder = 1
+      OnClick = BAlterarClick
+    end
+    object BExcluir: TButton
+      Left = 878
+      Top = 13
+      Width = 105
+      Height = 41
+      Anchors = [akTop, akRight]
+      Cancel = True
+      Caption = 'Excluir'
+      TabOrder = 2
+      OnClick = BExcluirClick
+    end
+    object BLocalizar: TButton
+      Left = 407
+      Top = 22
+      Width = 105
+      Height = 23
+      Anchors = [akTop, akRight]
+      Cancel = True
+      Caption = 'Localizar/Filtrar'
+      TabOrder = 5
+      OnClick = BLocalizarClick
+    end
+    object Bimprimir: TButton
+      Left = 8
+      Top = 13
+      Width = 105
+      Height = 41
+      Cancel = True
+      Caption = 'Imprimir'
+      TabOrder = 3
+      OnClick = BimprimirClick
+    end
+    object BIncluir: TButton
+      Left = 656
+      Top = 13
+      Width = 105
+      Height = 41
+      Anchors = [akTop, akRight]
+      Cancel = True
+      Caption = 'Incluir'
+      TabOrder = 4
+      OnClick = BIncluirClick
+    end
+  end
+  object DBGPrincipal: TDBGrid
+    Left = 0
+    Top = 65
+    Width = 991
+    Height = 183
+    Align = alClient
+    DataSource = SourceDb
+    Options = [dgTitles, dgIndicator, dgColumnResize, dgColLines, dgRowLines, dgTabs, dgRowSelect, dgConfirmDelete, dgCancelOnExit, dgTitleClick, dgTitleHotTrack]
+    ReadOnly = True
+    TabOrder = 1
+    TitleFont.Charset = DEFAULT_CHARSET
+    TitleFont.Color = clWindowText
+    TitleFont.Height = -12
+    TitleFont.Name = 'Segoe UI'
+    TitleFont.Style = []
+  end
+  object DBGSecundario: TDBGrid
+    Left = 0
+    Top = 248
+    Width = 991
+    Height = 150
+    Align = alBottom
+    DataSource = DataSourceAux
+    Options = [dgTitles, dgIndicator, dgColumnResize, dgColLines, dgRowLines, dgTabs, dgRowSelect, dgConfirmDelete, dgCancelOnExit, dgTitleClick, dgTitleHotTrack]
+    ReadOnly = True
+    TabOrder = 2
+    TitleFont.Charset = DEFAULT_CHARSET
+    TitleFont.Color = clWindowText
+    TitleFont.Height = -12
+    TitleFont.Name = 'Segoe UI'
+    TitleFont.Style = []
+  end
+  object ConnectDb: TFDConnection
+    Params.Strings = (
+      'Database=SRV-ORACLE'
+      'User_Name=MATHEUS_TESTE'
+      'Password=LARANJA'
+      'DriverID=Ora')
+    Connected = True
+    Left = 208
+    Top = 144
+  end
+  object QDb: TFDQuery
+    AfterScroll = QDbAfterScroll
+    Connection = ConnectDb
+    SQL.Strings = (
+      'SELECT *  FROM C_PEDIDOS ORDER BY Pdd_CodPed ')
+    Left = 304
+    Top = 144
+    object QDbPDD_CODPED: TFMTBCDField
+      DisplayLabel = 'C'#243'digo Pedido'
+      DisplayWidth = 25
+      FieldName = 'PDD_CODPED'
+      Origin = 'PDD_CODPED'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
+      Precision = 38
+      Size = 0
+    end
+    object QDbPDD_DATEPED: TDateTimeField
+      DisplayLabel = 'Data Pedido'
+      DisplayWidth = 25
+      FieldName = 'PDD_DATEPED'
+      Origin = 'PDD_DATEPED'
+    end
+    object QDbPDD_TTLPED: TBCDField
+      DisplayLabel = 'Total Pedido'
+      DisplayWidth = 25
+      FieldName = 'PDD_TTLPED'
+      Origin = 'PDD_TTLPED'
+      Precision = 10
+      Size = 2
+    end
+  end
+  object SourceDb: TDataSource
+    DataSet = QDb
+    Left = 384
+    Top = 144
+  end
+  object QAuxiliar: TFDQuery
+    Connection = ConnectDb
+    SQL.Strings = (
+      '')
+    Left = 304
+    Top = 200
+  end
+  object QTabelaAux: TFDQuery
+    Connection = ConnectDb
+    SQL.Strings = (
+      'SELECT * FROM C_ITENS ')
+    Left = 304
+    Top = 88
+    object QTabelaAuxITN_CODITN: TFMTBCDField
+      FieldName = 'ITN_CODITN'
+      Origin = 'ITN_CODITN'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
+      Visible = False
+      Precision = 38
+      Size = 0
+    end
+    object QTabelaAuxITN_PEDIDOS_ITENS: TFMTBCDField
+      FieldName = 'ITN_PEDIDOS_ITENS'
+      Origin = 'ITN_PEDIDOS_ITENS'
+      Visible = False
+      Precision = 38
+      Size = 0
+    end
+    object QTabelaAuxITN_PRODUTOS_ITENS: TStringField
+      DisplayLabel = 'Codigo Produto'
+      DisplayWidth = 25
+      FieldName = 'ITN_PRODUTOS_ITENS'
+      Origin = 'ITN_PRODUTOS_ITENS'
+      Size = 50
+    end
+    object QTabelaAuxITN_QTD: TFMTBCDField
+      DisplayLabel = 'Quantidade'
+      DisplayWidth = 25
+      FieldName = 'ITN_QTD'
+      Origin = 'ITN_QTD'
+      Precision = 38
+      Size = 0
+    end
+    object QTabelaAuxITN_VALITENS: TBCDField
+      DisplayLabel = 'Valor Total'
+      DisplayWidth = 25
+      FieldName = 'ITN_VALITENS'
+      Origin = 'ITN_VALITENS'
+      Precision = 10
+      Size = 2
+    end
+  end
+  object DataSourceAux: TDataSource
+    DataSet = QTabelaAux
+    Left = 384
+    Top = 96
+  end
+  object ppDBPipeline1: TppDBPipeline
+    DataSource = DSReport
+    UserName = 'DBPipeline1'
+    Left = 152
+    Top = 312
+    object ppDBPipeline1ppField1: TppField
+      Alignment = taRightJustify
+      FieldAlias = 'ITN_CODITN'
+      FieldName = 'ITN_CODITN'
+      FieldLength = 0
+      DataType = dtDouble
+      DisplayWidth = 0
+      Position = 0
+    end
+    object ppDBPipeline1ppField2: TppField
+      Alignment = taRightJustify
+      FieldAlias = 'C'#243'digo Pedido'
+      FieldName = 'ITN_PEDIDOS_ITENS'
+      FieldLength = 0
+      DataType = dtDouble
+      DisplayWidth = 39
+      Position = 1
+    end
+    object ppDBPipeline1ppField3: TppField
+      FieldAlias = 'C'#243'digo Produto'
+      FieldName = 'ITN_PRODUTOS_ITENS'
+      FieldLength = 50
+      DisplayWidth = 50
+      Position = 2
+    end
+    object ppDBPipeline1ppField4: TppField
+      Alignment = taRightJustify
+      FieldAlias = 'Quantidade '
+      FieldName = 'ITN_QTD'
+      FieldLength = 0
+      DataType = dtDouble
+      DisplayWidth = 39
+      Position = 3
+    end
+    object ppDBPipeline1ppField5: TppField
+      Alignment = taRightJustify
+      FieldAlias = 'Valor Total'
+      FieldName = 'ITN_VALITENS'
+      FieldLength = 2
+      DataType = dtDouble
+      DisplayWidth = 11
+      Position = 4
+    end
+    object ppDBPipeline1ppField6: TppField
+      FieldAlias = 'Data Pedido'
+      FieldName = 'PDD_DATEPED'
+      FieldLength = 0
+      DataType = dtDateTime
+      DisplayWidth = 18
+      Position = 5
+    end
+    object ppDBPipeline1ppField7: TppField
+      Alignment = taRightJustify
+      FieldAlias = 'TOTAL_PEDIDOS'
+      FieldName = 'TOTAL_PEDIDOS'
+      FieldLength = 2
+      DataType = dtDouble
+      DisplayWidth = 11
+      Position = 6
+    end
+    object ppDBPipeline1ppField8: TppField
+      Alignment = taRightJustify
+      FieldAlias = 'Valor Unitario'
+      FieldName = 'PDT_VALPRD'
+      FieldLength = 2
+      DataType = dtDouble
+      DisplayWidth = 11
+      Position = 7
+    end
+    object ppDBPipeline1ppField9: TppField
+      FieldAlias = 'Descri'#231#227'o Produto'
+      FieldName = 'PDT_DSCPRD'
+      FieldLength = 100
+      DisplayWidth = 100
+      Position = 8
+    end
+  end
+  object ppReport1: TppReport
+    AutoStop = False
+    DataPipeline = ppDBPipeline1
+    PrinterSetup.BinName = 'Default'
+    PrinterSetup.DocumentName = 'Report'
+    PrinterSetup.PaperName = 'A4'
+    PrinterSetup.PrinterName = 'Default'
+    PrinterSetup.SaveDeviceSettings = False
+    PrinterSetup.mmMarginBottom = 6350
+    PrinterSetup.mmMarginLeft = 6350
+    PrinterSetup.mmMarginRight = 6350
+    PrinterSetup.mmMarginTop = 6350
+    PrinterSetup.mmPaperHeight = 297000
+    PrinterSetup.mmPaperWidth = 210000
+    PrinterSetup.PaperSize = 9
+    ArchiveFileName = '($MyDocuments)\ReportArchive.raf'
+    DeviceType = 'Screen'
+    DefaultFileDeviceType = 'PDF'
+    EmailSettings.ReportFormat = 'PDF'
+    LanguageID = 'Default'
+    OpenFile = False
+    OutlineSettings.CreateNode = True
+    OutlineSettings.CreatePageNodes = True
+    OutlineSettings.Enabled = True
+    OutlineSettings.Visible = True
+    ThumbnailSettings.Enabled = True
+    ThumbnailSettings.Visible = True
+    ThumbnailSettings.DeadSpace = 30
+    ThumbnailSettings.PageHighlight.Width = 3
+    ThumbnailSettings.ThumbnailSize = tsSmall
+    PDFSettings.EmbedFontOptions = [efUseSubset]
+    PDFSettings.EncryptSettings.AllowCopy = True
+    PDFSettings.EncryptSettings.AllowInteract = True
+    PDFSettings.EncryptSettings.AllowModify = True
+    PDFSettings.EncryptSettings.AllowPrint = True
+    PDFSettings.EncryptSettings.AllowExtract = True
+    PDFSettings.EncryptSettings.AllowAssemble = True
+    PDFSettings.EncryptSettings.AllowQualityPrint = True
+    PDFSettings.EncryptSettings.Enabled = False
+    PDFSettings.EncryptSettings.KeyLength = kl40Bit
+    PDFSettings.EncryptSettings.EncryptionType = etRC4
+    PDFSettings.FontEncoding = feAnsi
+    PDFSettings.ImageCompressionLevel = 25
+    PDFSettings.PDFAFormat = pafNone
+    PreviewFormSettings.PageBorder.mmPadding = 0
+    RTFSettings.DefaultFont.Charset = DEFAULT_CHARSET
+    RTFSettings.DefaultFont.Color = clWindowText
+    RTFSettings.DefaultFont.Height = -13
+    RTFSettings.DefaultFont.Name = 'Arial'
+    RTFSettings.DefaultFont.Style = []
+    TextFileName = '($MyDocuments)\Report.pdf'
+    TextSearchSettings.DefaultString = '<FindText>'
+    TextSearchSettings.Enabled = True
+    XLSSettings.AppName = 'ReportBuilder'
+    XLSSettings.Author = 'ReportBuilder'
+    XLSSettings.Subject = 'Report'
+    XLSSettings.Title = 'Report'
+    XLSSettings.WorksheetName = 'Report'
+    Left = 88
+    Top = 304
+    Version = '20.02'
+    mmColumnWidth = 0
+    DataPipelineName = 'ppDBPipeline1'
+    object ppDetailBand1: TppDetailBand
+      Background1.Brush.Style = bsClear
+      Background2.Brush.Style = bsClear
+      Border.mmPadding = 0
+      mmBottomOffset = 0
+      mmHeight = 14817
+      mmPrintPosition = 0
+      object ppLabel6: TppLabel
+        DesignLayer = ppDesignLayer1
+        UserName = 'Label6'
+        AutoSize = False
+        Border.mmPadding = 0
+        Caption = 'C'#243'digo Produto:'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+        FormFieldSettings.FormFieldType = fftNone
+        Transparent = True
+        mmHeight = 4763
+        mmLeft = 5821
+        mmTop = 3704
+        mmWidth = 25400
+        BandType = 4
+        LayerName = Foreground
+      end
+      object ppDBText4: TppDBText
+        DesignLayer = ppDesignLayer1
+        UserName = 'DBText4'
+        Border.mmPadding = 0
+        DataField = 'ITN_PRODUTOS_ITENS'
+        DataPipeline = ppDBPipeline1
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        ParentDataPipeline = False
+        Transparent = True
+        DataPipelineName = 'ppDBPipeline1'
+        mmHeight = 4763
+        mmLeft = 5821
+        mmTop = 8996
+        mmWidth = 9525
+        BandType = 4
+        LayerName = Foreground
+      end
+      object ppLabel7: TppLabel
+        DesignLayer = ppDesignLayer1
+        UserName = 'Label7'
+        AutoSize = False
+        Border.mmPadding = 0
+        Caption = 'Descri'#231#227'o Produto:'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+        FormFieldSettings.FormFieldType = fftNone
+        Transparent = True
+        mmHeight = 4763
+        mmLeft = 49742
+        mmTop = 3704
+        mmWidth = 29898
+        BandType = 4
+        LayerName = Foreground
+      end
+      object ppDBText5: TppDBText
+        DesignLayer = ppDesignLayer1
+        UserName = 'DBText5'
+        Border.mmPadding = 0
+        DataField = 'PDT_DSCPRD'
+        DataPipeline = ppDBPipeline1
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        ParentDataPipeline = False
+        Transparent = True
+        DataPipelineName = 'ppDBPipeline1'
+        mmHeight = 5735
+        mmLeft = 49742
+        mmTop = 8996
+        mmWidth = 30111
+        BandType = 4
+        LayerName = Foreground
+      end
+      object ppLabel9: TppLabel
+        DesignLayer = ppDesignLayer1
+        UserName = 'Label9'
+        AutoSize = False
+        Border.mmPadding = 0
+        Caption = 'Valor Unitario:'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+        FormFieldSettings.FormFieldType = fftNone
+        Transparent = True
+        mmHeight = 4763
+        mmLeft = 127265
+        mmTop = 3704
+        mmWidth = 23147
+        BandType = 4
+        LayerName = Foreground
+      end
+      object ppDBText6: TppDBText
+        DesignLayer = ppDesignLayer1
+        UserName = 'DBText6'
+        Border.mmPadding = 0
+        DataField = 'PDT_VALPRD'
+        DataPipeline = ppDBPipeline1
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        ParentDataPipeline = False
+        Transparent = True
+        DataPipelineName = 'ppDBPipeline1'
+        mmHeight = 4763
+        mmLeft = 132821
+        mmTop = 8996
+        mmWidth = 17616
+        BandType = 4
+        LayerName = Foreground
+      end
+      object ppLabel10: TppLabel
+        DesignLayer = ppDesignLayer1
+        UserName = 'Label10'
+        Border.mmPadding = 0
+        Caption = 'R$'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clBlack
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+        FormFieldSettings.FormFieldType = fftNone
+        Transparent = True
+        mmHeight = 4233
+        mmLeft = 127529
+        mmTop = 8996
+        mmWidth = 4233
+        BandType = 4
+        LayerName = Foreground
+      end
+      object ppLabel11: TppLabel
+        DesignLayer = ppDesignLayer1
+        UserName = 'Label11'
+        AutoSize = False
+        Border.mmPadding = 0
+        Caption = 'Quantidade:'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+        FormFieldSettings.FormFieldType = fftNone
+        Transparent = True
+        mmHeight = 4763
+        mmLeft = 93927
+        mmTop = 3704
+        mmWidth = 19050
+        BandType = 4
+        LayerName = Foreground
+      end
+      object ppDBText7: TppDBText
+        DesignLayer = ppDesignLayer1
+        UserName = 'DBText7'
+        Border.mmPadding = 0
+        DataField = 'ITN_QTD'
+        DataPipeline = ppDBPipeline1
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        ParentDataPipeline = False
+        Transparent = True
+        DataPipelineName = 'ppDBPipeline1'
+        mmHeight = 4763
+        mmLeft = 93927
+        mmTop = 10054
+        mmWidth = 19255
+        BandType = 4
+        LayerName = Foreground
+      end
+      object ppLabel12: TppLabel
+        DesignLayer = ppDesignLayer1
+        UserName = 'Label12'
+        AutoSize = False
+        Border.mmPadding = 0
+        Caption = 'Valor Total:'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+        FormFieldSettings.FormFieldType = fftNone
+        Transparent = True
+        mmHeight = 4763
+        mmLeft = 164571
+        mmTop = 3704
+        mmWidth = 17992
+        BandType = 4
+        LayerName = Foreground
+      end
+      object ppLabel13: TppLabel
+        DesignLayer = ppDesignLayer1
+        UserName = 'Label101'
+        Border.mmPadding = 0
+        Caption = 'R$'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clBlack
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+        FormFieldSettings.FormFieldType = fftNone
+        Transparent = True
+        mmHeight = 4233
+        mmLeft = 164836
+        mmTop = 8996
+        mmWidth = 4233
+        BandType = 4
+        LayerName = Foreground
+      end
+      object ppDBText8: TppDBText
+        DesignLayer = ppDesignLayer1
+        UserName = 'DBText8'
+        Border.mmPadding = 0
+        DataField = 'ITN_VALITENS'
+        DataPipeline = ppDBPipeline1
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Name = 'Arial'
+        Font.Size = 10
+        Font.Style = []
+        ParentDataPipeline = False
+        Transparent = True
+        DataPipelineName = 'ppDBPipeline1'
+        mmHeight = 4763
+        mmLeft = 169598
+        mmTop = 8996
+        mmWidth = 13110
+        BandType = 4
+        LayerName = Foreground
+      end
+    end
+    object ppGroup1: TppGroup
+      BreakName = 'ITN_PEDIDOS_ITENS'
+      DataPipeline = ppDBPipeline1
+      GroupFileSettings.NewFile = False
+      GroupFileSettings.EmailFile = False
+      OutlineSettings.CreateNode = True
+      NewPage = True
+      StartOnOddPage = True
+      UserName = 'Group1'
+      mmNewColumnThreshold = 0
+      mmNewPageThreshold = 0
+      DataPipelineName = 'ppDBPipeline1'
+      NewFile = False
+      object ppGroupHeaderBand1: TppGroupHeaderBand
+        Background.Brush.Style = bsClear
+        Border.mmPadding = 0
+        mmBottomOffset = 0
+        mmHeight = 22490
+        mmPrintPosition = 0
+        object ppLabel1: TppLabel
+          DesignLayer = ppDesignLayer1
+          UserName = 'Label1'
+          Border.mmPadding = 0
+          Caption = 'Relat'#243'rio de Pedidos'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clBlack
+          Font.Name = 'Arial'
+          Font.Size = 14
+          Font.Style = []
+          FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+          FormFieldSettings.FormFieldType = fftNone
+          Transparent = True
+          mmHeight = 5821
+          mmLeft = 4233
+          mmTop = 529
+          mmWidth = 47361
+          BandType = 3
+          GroupNo = 0
+          LayerName = Foreground
+        end
+        object ppLabel2: TppLabel
+          DesignLayer = ppDesignLayer1
+          UserName = 'Label2'
+          AutoSize = False
+          Border.mmPadding = 0
+          Caption = 'N'#176' Pedido:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Name = 'Arial'
+          Font.Size = 10
+          Font.Style = []
+          FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+          FormFieldSettings.FormFieldType = fftNone
+          Transparent = True
+          mmHeight = 4763
+          mmLeft = 4763
+          mmTop = 8202
+          mmWidth = 16669
+          BandType = 3
+          GroupNo = 0
+          LayerName = Foreground
+        end
+        object ppDBText1: TppDBText
+          DesignLayer = ppDesignLayer1
+          UserName = 'DBText1'
+          Border.mmPadding = 0
+          DataField = 'ITN_PEDIDOS_ITENS'
+          DataPipeline = ppDBPipeline1
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Name = 'Arial'
+          Font.Size = 10
+          Font.Style = []
+          ParentDataPipeline = False
+          Transparent = True
+          DataPipelineName = 'ppDBPipeline1'
+          mmHeight = 4763
+          mmLeft = 21696
+          mmTop = 8202
+          mmWidth = 9525
+          BandType = 3
+          GroupNo = 0
+          LayerName = Foreground
+        end
+        object ppLabel3: TppLabel
+          DesignLayer = ppDesignLayer1
+          UserName = 'Label3'
+          AutoSize = False
+          Border.mmPadding = 0
+          Caption = 'Dt. Emiss'#227'o:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Name = 'Arial'
+          Font.Size = 10
+          Font.Style = []
+          FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+          FormFieldSettings.FormFieldType = fftNone
+          Transparent = True
+          mmHeight = 4763
+          mmLeft = 59002
+          mmTop = 8202
+          mmWidth = 21167
+          BandType = 3
+          GroupNo = 0
+          LayerName = Foreground
+        end
+        object ppDBText2: TppDBText
+          DesignLayer = ppDesignLayer1
+          UserName = 'DBText2'
+          Border.mmPadding = 0
+          DataField = 'PDD_DATEPED'
+          DataPipeline = ppDBPipeline1
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Name = 'Arial'
+          Font.Size = 10
+          Font.Style = []
+          ParentDataPipeline = False
+          Transparent = True
+          DataPipelineName = 'ppDBPipeline1'
+          mmHeight = 4763
+          mmLeft = 80433
+          mmTop = 8202
+          mmWidth = 17727
+          BandType = 3
+          GroupNo = 0
+          LayerName = Foreground
+        end
+        object ppDBText3: TppDBText
+          DesignLayer = ppDesignLayer1
+          UserName = 'DBText3'
+          Border.mmPadding = 0
+          DataField = 'TOTAL_PEDIDOS'
+          DataPipeline = ppDBPipeline1
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Name = 'Arial'
+          Font.Size = 10
+          Font.Style = []
+          ParentDataPipeline = False
+          Transparent = True
+          DataPipelineName = 'ppDBPipeline1'
+          mmHeight = 4763
+          mmLeft = 146844
+          mmTop = 8202
+          mmWidth = 19315
+          BandType = 3
+          GroupNo = 0
+          LayerName = Foreground
+        end
+        object ppLabel4: TppLabel
+          DesignLayer = ppDesignLayer1
+          UserName = 'Label4'
+          AutoSize = False
+          Border.mmPadding = 0
+          Caption = 'Valor Pedido:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Name = 'Arial'
+          Font.Size = 10
+          Font.Style = []
+          FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+          FormFieldSettings.FormFieldType = fftNone
+          Transparent = True
+          mmHeight = 4763
+          mmLeft = 119327
+          mmTop = 8202
+          mmWidth = 22225
+          BandType = 3
+          GroupNo = 0
+          LayerName = Foreground
+        end
+        object ppLabel5: TppLabel
+          DesignLayer = ppDesignLayer1
+          UserName = 'Label5'
+          Border.mmPadding = 0
+          Caption = 'R$'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clBlack
+          Font.Name = 'Arial'
+          Font.Size = 10
+          Font.Style = []
+          FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+          FormFieldSettings.FormFieldType = fftNone
+          Transparent = True
+          mmHeight = 4233
+          mmLeft = 142082
+          mmTop = 8202
+          mmWidth = 4233
+          BandType = 3
+          GroupNo = 0
+          LayerName = Foreground
+        end
+        object ppLabel8: TppLabel
+          DesignLayer = ppDesignLayer1
+          UserName = 'Label8'
+          Border.mmPadding = 0
+          Caption = 'Itens do Pedido:'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clBlack
+          Font.Name = 'Arial'
+          Font.Size = 14
+          Font.Style = []
+          FormFieldSettings.FormSubmitInfo.SubmitMethod = fstPost
+          FormFieldSettings.FormFieldType = fftNone
+          Transparent = True
+          mmHeight = 5821
+          mmLeft = 4763
+          mmTop = 15081
+          mmWidth = 37042
+          BandType = 3
+          GroupNo = 0
+          LayerName = Foreground
+        end
+      end
+      object ppGroupFooterBand1: TppGroupFooterBand
+        Background.Brush.Style = bsClear
+        Border.mmPadding = 0
+        HideWhenOneDetail = False
+        mmBottomOffset = 0
+        mmHeight = 0
+        mmPrintPosition = 0
+      end
+    end
+    object ppDesignLayers1: TppDesignLayers
+      object ppDesignLayer1: TppDesignLayer
+        UserName = 'Foreground'
+        LayerType = ltBanded
+        Index = 0
+      end
+    end
+    object ppParameterList1: TppParameterList
+    end
+  end
+  object DSReport: TDataSource
+    DataSet = QReport
+    Left = 256
+    Top = 336
+  end
+  object QReport: TFDQuery
+    Active = True
+    AfterScroll = QDbAfterScroll
+    Connection = ConnectDb
+    SQL.Strings = (
+      'SELECT ci.*,'
+      '                       cp.Pdd_DatePed, '
+      '                       cp.Pdd_TtlPed AS "TOTAL_PEDIDOS",'
+      '                       p.Pdt_ValPrd, '
+      '                       p.Pdt_Dscprd '
+      '                  FROM C_ITENS ci '
+      '                 INNER JOIN C_PEDIDOS cp'
+      '                    ON ci.Itn_Pedidos_Itens = cp.Pdd_CodPed'
+      '                 INNER JOIN C_PRODUTOS p'
+      '                    ON ci.Itn_Produtos_Itens = p.Pdt_CodPrd '
+      
+        '                 ORDER BY ci.Itn_Pedidos_Itens, ci.Itn_Produtos_' +
+        'Itens')
+    Left = 344
+    Top = 328
+    object QReportITN_CODITN: TFMTBCDField
+      FieldName = 'ITN_CODITN'
+      Origin = 'ITN_CODITN'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
+      Visible = False
+      Precision = 38
+      Size = 0
+    end
+    object QReportITN_PEDIDOS_ITENS: TFMTBCDField
+      DisplayLabel = 'C'#243'digo Pedido'
+      FieldName = 'ITN_PEDIDOS_ITENS'
+      Origin = 'ITN_PEDIDOS_ITENS'
+      Precision = 38
+      Size = 0
+    end
+    object QReportITN_PRODUTOS_ITENS: TStringField
+      DisplayLabel = 'C'#243'digo Produto'
+      FieldName = 'ITN_PRODUTOS_ITENS'
+      Origin = 'ITN_PRODUTOS_ITENS'
+      Size = 50
+    end
+    object QReportITN_QTD: TFMTBCDField
+      DisplayLabel = 'Quantidade '
+      FieldName = 'ITN_QTD'
+      Origin = 'ITN_QTD'
+      Precision = 38
+      Size = 0
+    end
+    object QReportITN_VALITENS: TBCDField
+      DisplayLabel = 'Valor Total'
+      FieldName = 'ITN_VALITENS'
+      Origin = 'ITN_VALITENS'
+      Precision = 10
+      Size = 2
+    end
+    object QReportPDD_DATEPED: TDateTimeField
+      DisplayLabel = 'Data Pedido'
+      FieldName = 'PDD_DATEPED'
+      Origin = 'PDD_DATEPED'
+    end
+    object QReportTOTAL_PEDIDOS: TBCDField
+      FieldName = 'TOTAL_PEDIDOS'
+      Origin = 'TOTAL_PEDIDOS'
+      Precision = 10
+      Size = 2
+    end
+    object QReportPDT_VALPRD: TBCDField
+      DisplayLabel = 'Valor Unitario'
+      FieldName = 'PDT_VALPRD'
+      Origin = 'PDT_VALPRD'
+      Precision = 10
+      Size = 2
+    end
+    object QReportPDT_DSCPRD: TStringField
+      DisplayLabel = 'Descri'#231#227'o Produto'
+      FieldName = 'PDT_DSCPRD'
+      Origin = 'PDT_DSCPRD'
+      Size = 100
+    end
+  end
+end
