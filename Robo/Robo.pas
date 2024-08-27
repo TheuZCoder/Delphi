@@ -13,8 +13,14 @@ type
     EditNewPrefix: TEdit; // Novo TEdit para o prefixo novo
     Memo1: TMemo;
     EditUnitName: TEdit;
-    EditTypeName: TEdit; // Novo Label para o EditNewPrefix
+    EditTypeName: TEdit;
+    Label1: TLabel;
+    Label2: TLabel;
+    Label3: TLabel;
+    Label4: TLabel;
+    Button2: TButton; // Novo Label para o EditNewPrefix
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     procedure ProcessFiles(const Directory: string);
     procedure AddUnitIfNeeded(var FileContent: string);
@@ -58,8 +64,6 @@ begin
     TFile.WriteAllText(FileName, FileContent, Encoding);
     Memo1.Lines.Add('Arquivo processado: ' + FileName);
   end;
-
-  ShowMessage('Processo concluído!');
 end;
 
 procedure TForm1.ReplaceTextInFile(var FileContent: string);
@@ -102,37 +106,42 @@ end;
 procedure TForm1.UpdateLanguageConstFile(const FileName: string);
 var
   FileContent: string;
-  UsesPos, TypePos, ImplPos: Integer;
+  UsesPos, ImplPos: Integer;
   UnitName, TypeName: string;
 begin
-  // Lê o conteúdo do arquivo usando codificação ANSI
-  FileContent := TFile.ReadAllText(FileName, TEncoding.ANSI);
-
-  // Obtém o nome da unidade e o nome do tipo dos Edits
-  UnitName := EditUnitName.Text;
-  TypeName := EditTypeName.Text;
-
-  // Adiciona a unidade após a primeira declaração de "uses"
-  UsesPos := Pos('uses', LowerCase(FileContent));
-  if UsesPos > 0 then
+  // Verifica se os edits estão habilitados
+  if EditTypeName.Enabled and EditUnitName.Enabled then
   begin
+    // Lê o conteúdo do arquivo usando codificação ANSI
+    FileContent := TFile.ReadAllText(FileName, TEncoding.ANSI);
+
+    // Obtém o nome da unidade e o nome do tipo dos Edits
+    UnitName := EditUnitName.Text;
+    TypeName := EditTypeName.Text;
+
     // Adiciona a unidade após a primeira declaração de "uses"
-    Insert(Format(#13#10'  uConst.ptBR.%s,', [LowerCase(UnitName)]), FileContent, UsesPos + Length('uses'));
+    UsesPos := Pos('uses', LowerCase(FileContent));
+    if UsesPos > 0 then
+    begin
+      // Adiciona a unidade após a primeira declaração de "uses"
+      Insert(Format(#13#10'  uConst.ptBR.%s,', [LowerCase(UnitName)]), FileContent, UsesPos + Length('uses'));
+    end;
+
+    // Adiciona a declaração de tipo antes da palavra-chave "implementation"
+    ImplPos := Pos('implementation', LowerCase(FileContent));
+    if ImplPos > 0 then
+    begin
+      // Adiciona o tipo antes da palavra-chave "implementation"
+      Insert(Format('  TConst%s = TptBR%s;'#13#10, [TypeName, TypeName]), FileContent, ImplPos);
+    end;
+
+    // Salva o conteúdo modificado no arquivo usando codificação ANSI
+    TFile.WriteAllText(FileName, FileContent, TEncoding.ANSI);
+
+    Memo1.Lines.Add('Arquivo uLanguageConst.pas atualizado: ' + FileName);
   end;
-
-  // Adiciona a declaração de tipo antes da palavra-chave "implementation"
-  ImplPos := Pos('implementation', LowerCase(FileContent));
-  if ImplPos > 0 then
-  begin
-    // Adiciona o tipo antes da palavra-chave "implementation"
-    Insert(Format('  TConst%s = TptBR%s;'#13#10, [TypeName, TypeName]), FileContent, ImplPos);
-  end;
-
-  // Salva o conteúdo modificado no arquivo usando codificação ANSI
-  TFile.WriteAllText(FileName, FileContent, TEncoding.ANSI);
-
-  Memo1.Lines.Add('Arquivo uLanguageConst.pas atualizado: ' + FileName);
 end;
+
 
 procedure TForm1.Button1Click(Sender: TObject);
 var
@@ -156,7 +165,27 @@ begin
     UpdateLanguageConstFile(uLanguageConstFile)
   else
     ShowMessage('Arquivo uLanguageConst.pas não encontrado.');
+
+   EditReplace.Text := 'TptBR.';
+   EditNewPrefix.Text := 'TConst';
+   EditTypeName.Clear;
+   EditUnitName.Text := 'c_';
 end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+   // Alterna o estado de habilitação dos campos EditTypeName e EditUnitName
+  EditTypeName.Enabled := not EditTypeName.Enabled;
+  EditUnitName.Enabled := not EditUnitName.Enabled;
+
+  // Atualiza o texto do botão com base no estado dos campos
+  if EditTypeName.Enabled then
+    Button2.Caption := 'Desligar Edits'
+  else
+    Button2.Caption := 'Ligar Edits';
+end;
+
+
 
 end.
 
